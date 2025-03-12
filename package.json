@@ -1,0 +1,23 @@
+{
+  "name": "cypress-plugins",
+  "version": "0.0.1",
+  "description": "A collection of plugins for cypress created by Chetachi Paschal Enyimiri ",
+  "main": "./bin/index.js",
+  "bin": {
+    "cypress-plugins": "./bin/index.js"
+  },
+  "keywords": [
+    "cypress",
+    "ms-team",
+    "github",
+    "reporter",
+    "mocha",
+    "cypress-mochawesome-reporter"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qaPaschalE/cypress-plugins.git"
+  },
+  "author": "Chetachi Paschal Enyimiri",
+  "license": "MIT"
+}

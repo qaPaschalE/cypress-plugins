@@ -28,6 +28,9 @@ jobs:
           restore-keys: |
             npm-${{ runner.os }}-
 
+      - name: 🔍 Check Current Directory
+        run: pwd
+
       - name: 📥 Install Dependencies
         run: |
           cd cypress-ms-teams-reporter

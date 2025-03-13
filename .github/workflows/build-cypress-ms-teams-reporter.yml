@@ -23,12 +23,10 @@ jobs:
 
       - name: 📦 Install Dependencies
         run: |
-          cd cypress-ms-teams-reporter
           npm install
 
       - name: 🏃‍♂️ Run Cypress Tests
         run: |
-          cd cypress-ms-teams-reporter
           npx cypress run
 
       - name: 📩 Send Report to Microsoft Teams

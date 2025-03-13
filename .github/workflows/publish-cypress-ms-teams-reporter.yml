@@ -30,7 +30,6 @@ jobs:
 
       - name: 📥 Install Dependencies
         run: |
-          cd cypress-ms-teams-reporter
           if [ -f package-lock.json ]; then
             npm ci
           else
@@ -39,14 +38,12 @@ jobs:
 
       - name: 🛠 Build Package
         run: |
-          cd cypress-ms-teams-reporter
           npm run build
 
       - name: 🚀 Publish Package to NPM
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          cd cypress-ms-teams-reporter
           npm publish --access public
           VERSION=$(node -p "require('./package.json').version")
           git tag v$VERSION

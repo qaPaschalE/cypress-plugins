@@ -23,15 +23,15 @@ jobs:
 
       - name: 📦 Install Dependencies
         run: |
-          cd cypress-plugin/cypress-ms-teams-reporter
+          cd cypress-ms-teams-reporter
           npm install
 
       - name: 🏃‍♂️ Run Cypress Tests
         run: |
-          cd cypress-plugin/cypress-ms-teams-reporter
+          cd cypress-ms-teams-reporter
           npx cypress run
 
       - name: 📩 Send Report to Microsoft Teams
         run: |
-          cd cypress-plugin/cypress-ms-teams-reporter
+          cd cypress-ms-teams-reporter
           npx cypress-ms-teams-reporter github ${{ secrets.TEAMS_WEBHOOK_URL }}

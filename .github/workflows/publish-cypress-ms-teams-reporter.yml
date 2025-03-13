@@ -24,12 +24,13 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.npm
-          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: npm-${{ runner.os }}-${{ hashFiles('cypress-plugin/cypress-ms-teams-reporter/package-lock.json') }}
           restore-keys: |
             npm-${{ runner.os }}-
 
       - name: 📥 Install Dependencies
         run: |
+          cd cypress-plugins/cypress-ms-teams-reporter
           if [ -f package-lock.json ]; then
             npm ci
           else
@@ -37,13 +38,16 @@ jobs:
           fi
 
       - name: 🛠 Build Package
-        run: npm run build
+        run: |
+          cd cypress-plugins/cypress-ms-teams-reporter
+          npm run build
 
       - name: 🚀 Publish Package to NPM
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          npm publish --access public && \
-          VERSION=$(node -p "require('./package.json').version") && \
-          git tag v$VERSION && \
+          cd cypress-plugin/cypress-ms-teams-reporter
+          npm publish --access public
+          VERSION=$(node -p "require('./package.json').version")
+          git tag v$VERSION
           git push origin v$VERSION

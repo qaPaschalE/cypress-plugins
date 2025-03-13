@@ -13,19 +13,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: 🚀 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: 🔧 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      - name: Install Dependencies
-        run: npm install
+      - name: 📦 Install Dependencies
+        run: |
+          cd cypress-plugin/cypress-ms-teams-reporter
+          npm install
 
-      - name: Run Cypress Tests
-        run: npm run cypress:run
+      - name: 🏃‍♂️ Run Cypress Tests
+        run: |
+          cd cypress-plugin/cypress-ms-teams-reporter
+          npx cypress run
 
-      - name: Send Report to Microsoft Teams
-        run: npx cypress-ms-teams-reporter github ${{ secrets.TEAMS_WEBHOOK_URL }}
+      - name: 📩 Send Report to Microsoft Teams
+        run: |
+          cd cypress-plugin/cypress-ms-teams-reporter
+          npx cypress-ms-teams-reporter github ${{ secrets.TEAMS_WEBHOOK_URL }}

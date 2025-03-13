@@ -30,6 +30,7 @@ jobs:
 
       - name: 📥 Install Dependencies
         run: |
+          cd cypress-ms-teams-reporter
           if [ -f package-lock.json ]; then
             npm ci
           else

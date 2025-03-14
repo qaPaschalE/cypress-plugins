@@ -11,9 +11,12 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: 🚀 Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Ensures full history
 
       - name: 🔧 Setup Node.js
         uses: actions/setup-node@v4
@@ -23,21 +26,25 @@ jobs:
       - name: 📦 Cache Dependencies
         uses: actions/cache@v3
         with:
-          path: cypress-plugins/cypress-ms-teams-reporter/node_modules
+          path: |
+            node_modules
+            cypress-plugins/cypress-ms-teams-reporter/node_modules
           key: npm-${{ runner.os }}-${{ hashFiles('cypress-plugins/cypress-ms-teams-reporter/package-lock.json') }}
           restore-keys: |
             npm-${{ runner.os }}-
 
+      - name: 🔍 Debug Repository Structure
+        run: ls -lR
+
+      - name: ✅ Check if Plugin Directory Exists
+        run: |
+          if [ -d "cypress-plugins/cypress-ms-teams-reporter" ]; then
+            echo "Directory exists ✅"
+          else
+            echo "❌ Directory does not exist!"
+            exit 1
+          fi
+
       - name: 📥 Install Dependencies
-        run: |
-          cd cypress-plugins/cypress-ms-teams-reporter
-          npm install
-
-      - name: 🛠 Build Package
-        run: |
-          cd cypress-plugins/cypress-ms-teams-reporter
-          npm run build
-
-      - name: ✅ Verify Build Output
-        run: |
-          ls -la cypress-plugins/cypress-ms-teams-reporter/dist
+        working-directory: cypress-plugins/cypress-ms-teams-reporter
+        run: npm install

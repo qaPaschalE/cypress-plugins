@@ -9,26 +9,36 @@ jobs:
   update-badge:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: 🚀 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Fetch Repository Views
+      - name: 🔍 Fetch Repository Views
         run: |
-          VIEWS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            https://api.github.com/repos/qaPaschalE/cypress-plugins/traffic/views \
-            | jq '.count')
+          VIEWS=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/qaPaschalE/cypress-plugins/traffic/views | jq '.count')
 
-          echo "Total Views: $VIEWS"
+          if [[ -z "$VIEWS" || "$VIEWS" == "null" ]]; then
+            echo "⚠️ Failed to fetch views. Using 0 as fallback."
+            VIEWS=0
+          fi
+
+          echo "📊 Total Views: $VIEWS"
           echo "VIEWS=$VIEWS" >> $GITHUB_ENV
 
-      - name: Update Views Badge
+      - name: 🏷️ Update Views Badge
         run: |
           curl -o views-badge.svg "https://img.shields.io/badge/Repo%20Views-${{ env.VIEWS }}-blue"
 
-      - name: Commit & Push
+      - name: 🛠 Commit & Push Changes
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git add views-badge.svg
-          git commit -m "Update repository views badge" || echo "No changes to commit"
-          git push origin main
+
+          if [[ -n $(git status --porcelain) ]]; then
+            git add views-badge.svg
+            git commit -m "📊 Update repository views badge: ${{ env.VIEWS }}"
+            git push origin main
+          else
+            echo "✅ No changes to commit."
+          fi

@@ -1,13 +1,15 @@
-name: publish
+name: build
 
 on:
-  workflow_run:
-    workflows: ["build"]
-    types:
-      - completed
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: 🚀 Checkout Repository
@@ -17,36 +19,38 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          registry-url: "https://registry.npmjs.org/"
 
       - name: 📦 Cache Dependencies
         uses: actions/cache@v3
         with:
-          path: cypress-plugins/cypress-ms-teams-reporter/node_modules
+          path: |
+            node_modules
+            cypress-plugins/cypress-ms-teams-reporter/node_modules
           key: npm-${{ runner.os }}-${{ hashFiles('cypress-plugins/cypress-ms-teams-reporter/package-lock.json') }}
           restore-keys: |
             npm-${{ runner.os }}-
 
+      - name: 🚀 Checkout Repository (Ensure Depth)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🛠 Debug Workspace
+        run: ls -R
+
+      - name: 🏗 Verify Repository Structure
+        run: ls -l
+
       - name: 📥 Install Dependencies
-        run: |
-          cd cypress-plugins/cypress-ms-teams-reporter
-          npm install
+        working-directory: cypress-plugins/cypress-ms-teams-reporter
+        run: npm install
 
-      - name: 🛠 Build Package (Again for Safety)
-        run: |
-          cd cypress-plugins/cypress-ms-teams-reporter
-          npm run build
+      - name: 🛠 Build Package
+        working-directory: cypress-plugins/cypress-ms-teams-reporter
+        run: npm run build
 
-      - name: 🚀 Publish Package to NPM
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          cd cypress-plugins/cypress-ms-teams-reporter
-          npm publish --access public
-
-      - name: 🏷️ Tag Version
-        run: |
-          cd cypress-plugins/cypress-ms-teams-reporter
-          VERSION=$(node -p "require('./package.json').version")
-          git tag v$VERSION
-          git push origin v$VERSION
+      - name: 📤 Upload Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: cypress-ms-teams-reporter
+          path: cypress-ms-teams-reporter/cypress/reports

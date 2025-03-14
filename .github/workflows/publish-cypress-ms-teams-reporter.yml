@@ -42,15 +42,22 @@ jobs:
         run: ls -l
 
       - name: 📥 Install Dependencies
-        working-directory: cypress-plugins/cypress-ms-teams-reporter
+        working-directory: cypress-ms-teams-reporter
         run: npm install
+        continue-on-error: true
 
       - name: 🛠 Build Package
-        working-directory: cypress-plugins/cypress-ms-teams-reporter
+        working-directory: cypress-ms-teams-reporter
         run: npm run build
+
+      - name: 🛠 cypress tests
+        working-directory: cypress-ms-teams-reporter
+        run: npx cypress run
 
       - name: 📤 Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: cypress-ms-teams-reporter
-          path: cypress-plugins/cypress-ms-teams-reporter
+          path: |
+            cypress/reports
+            cypress/screenshots

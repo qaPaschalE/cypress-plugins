@@ -38,7 +38,8 @@ jobs:
 
       - name: ✅ Check if Plugin Directory Exists
         run: |
-          if [ -d "cypress-plugins/cypress-ms-teams-reporter" ]; then
+          if [ -d "cypress-ms-teams-reporter" ]; then
+
             echo "Directory exists ✅"
           else
             echo "❌ Directory does not exist!"

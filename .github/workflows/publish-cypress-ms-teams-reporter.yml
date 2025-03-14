@@ -13,38 +13,30 @@ defaults:
 jobs:
   release:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Use Node.js 20
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: cypress-ms-teams-reporter/package-lock.json
 
-      - name: 📦 Install Dependencies
-        run: npm install
-
       - name: 🔍 Get Current Version
         id: get_version
         run: echo "VERSION=$(jq -r .version package.json)" >> $GITHUB_ENV
 
-      - name: 🔎 Check if Version Exists on NPM
-        id: check_npm
+      - name: 🚀 Bump Version (If Needed)
         run: |
-          if npm view @paschal_cheps/cypress-ms-teams-reporter@$VERSION > /dev/null 2>&1; then
-            echo "⚠️ Version $VERSION already exists on NPM. Skipping publish."
-            exit 0
-          else
-            echo "✅ New version detected: $VERSION"
-          fi
+          NEW_VERSION=$(npm version patch -m "🔖 Bump version to %s")
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          git push --follow-tags
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🚀 Publish to NPM
-        id: publish
+      - id: publish
         run: npm publish --access public
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -55,26 +47,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ env.VERSION }}
-          name: Release v${{ env.VERSION }}
-          body: "🚀 New release: v${{ env.VERSION }} is now available!"
+          tag_name: v${{ env.NEW_VERSION }}
+          name: Release v${{ env.NEW_VERSION }}
+          body: "🔖 New release v${{ env.NEW_VERSION }}"
           draft: false
           prerelease: false
 
-      - name: 🛠 Run Cypress Tests (After Publishing)
-        run: npx cypress run || echo "⚠️ Tests failed, but continuing..."
+      - name: ✅ Run Cypress Tests
+        run: |
+          npx cypress run || echo "⚠️ Cypress tests failed, but continuing..."
 
-      - name: 📤 Upload Test Artifacts
-        uses: actions/upload-artifact@v4
+      - name: 📢 Report to Microsoft Teams
         if: always()
-        with:
-          name: cypress-test-reports
-          path: |
-            cypress/reports
-            cypress/screenshots
-
-      - name: 📢 Report Results to Microsoft Teams (After Publishing)
-        if: always()
-        run: npx cypress-ms-teams-reporter
+        run: node scripts/report-to-teams.js
         env:
           TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}

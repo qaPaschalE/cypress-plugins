@@ -29,12 +29,11 @@ jobs:
             npm-${{ runner.os }}-
 
       - name: 🔍 Check Current Directory
-          cd cypress-ms-teams-reporter
+          - cd cypress-ms-teams-reporter
         run: pwd
 
       - name: 📥 Install Dependencies
         run: |
-          cd cypress-ms-teams-reporter
           if [ -f package-lock.json ]; then
             npm ci
           else

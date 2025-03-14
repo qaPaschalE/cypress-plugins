@@ -2,60 +2,40 @@ name: build
 
 on:
   push:
-    branches:
-      - main
+    branches: [master]
   pull_request:
-    branches:
-      - main
+    branches: [master]
+
+defaults:
+  run:
+    working-directory: cypress-ms-teams-reporter
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
-    steps:
-      - name: 🚀 Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Ensures full history
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
 
-      - name: 🔧 Setup Node.js
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+          cache-dependency-path: cypress-ms-teams-reporter/package-lock.json
 
-      - name: 📦 Cache Dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            node_modules
-            cypress-plugins/cypress-ms-teams-reporter/node_modules
-          key: npm-${{ runner.os }}-${{ hashFiles('cypress-plugins/cypress-ms-teams-reporter/package-lock.json') }}
-          restore-keys: |
-            npm-${{ runner.os }}-
+      - name: 📦 Install Dependencies
+        run: npm install
 
-      - name: 🔍 Debug Repository Structure
-        run: ls -lR
+      - name: 🛠 Build Package
+        run: npm run build
 
-      - name: ✅ Check if Plugin Directory Exists
-        run: |
-          if [ -d "cypress-ms-teams-reporter" ]; then
-
-            echo "Directory exists ✅"
-          else
-            echo "❌ Directory does not exist!"
-            exit 1
-          fi
-
-      - name: 🛠 Cypress Tests
-        working-directory: cypress-ms-teams-reporter
-        run: |
-          npx cypress run || echo "⚠️ Cypress tests failed, but continuing..."
-
-      - name: 📤 Upload Build Artifacts
+      - name: 📤 Upload Build Artifact
         uses: actions/upload-artifact@v4
-        if: always()
         with:
-          name: cypress-ms-teams-reporter
-          path: |
-            cypress/reports
-            cypress/screenshots
+          name: cypress-ms-teams-reporter-build
+          path: cypress-ms-teams-reporter/dist

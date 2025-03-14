@@ -6,40 +6,41 @@ on:
     types:
       - completed
 
-jobs:
-  publish:
-    runs-on: ubuntu-latest
-    steps:
-      - name: 🚀 Checkout Repository
-        uses: actions/checkout@v4
+defaults:
+  run:
+    working-directory: cypress-ms-teams-reporter
 
-      - name: 🔧 Setup Node.js
+jobs:
+  test-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 18
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          registry-url: https://registry.npmjs.org/
+          cache: "npm"
+          cache-dependency-path: cypress-ms-teams-reporter/package-lock.json
 
       - name: 📦 Install Dependencies
-        working-directory: cypress-ms-teams-reporter
         run: npm install
 
-      - name: 🛠 Build Package
-        working-directory: cypress-ms-teams-reporter
-        run: npm run build
+      - name: 🛠 Run Cypress Tests
+        run: npx cypress run || echo "⚠️ Tests failed, but continuing..."
 
-      - name: 🚀 Publish to npm
-        working-directory: cypress-ms-teams-reporter
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: 🏷️ Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: 📤 Upload Test Artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
         with:
-          tag_name: v1.3.${{ github.run_number }}
-          name: Release v1.3.${{ github.run_number }}
-          body: "📦 New release of cypress-ms-teams-reporter 🚀"
-          draft: false
-          prerelease: false
+          name: cypress-test-reports
+          path: |
+            cypress/reports
+            cypress/screenshots
+
+      - name: 📢 Report Results to Microsoft Teams
+        if: always()
+        run: npx cypress-ms-teams-reporter
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}

@@ -47,7 +47,7 @@ jobs:
           fi
 
       - name: 📥 Install Dependencies
-        working-directory: cypress-plugins/cypress-ms-teams-reporter
+        working-directory: cypress-ms-teams-reporter
         run: |
           npm install
           npx cypress run

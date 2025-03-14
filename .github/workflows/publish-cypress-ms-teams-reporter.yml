@@ -29,7 +29,39 @@ jobs:
       - name: 📦 Install Dependencies
         run: npm install
 
-      - name: 🛠 Run Cypress Tests
+      - name: 🔍 Get Current Version
+        id: get_version
+        run: echo "VERSION=$(jq -r .version package.json)" >> $GITHUB_ENV
+
+      - name: 🔎 Check if Version Exists on NPM
+        id: check_npm
+        run: |
+          if npm view @paschal_cheps/cypress-ms-teams-reporter@$VERSION > /dev/null 2>&1; then
+            echo "⚠️ Version $VERSION already exists on NPM. Skipping publish."
+            exit 0
+          else
+            echo "✅ New version detected: $VERSION"
+          fi
+
+      - name: 🚀 Publish to NPM
+        id: publish
+        run: npm publish --access public
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: Release v${{ env.VERSION }}
+          body: "🚀 New release: v${{ env.VERSION }} is now available!"
+          draft: false
+          prerelease: false
+
+      - name: 🛠 Run Cypress Tests (After Publishing)
         run: npx cypress run || echo "⚠️ Tests failed, but continuing..."
 
       - name: 📤 Upload Test Artifacts
@@ -41,25 +73,8 @@ jobs:
             cypress/reports
             cypress/screenshots
 
-      - name: 📢 Report Results to Microsoft Teams
+      - name: 📢 Report Results to Microsoft Teams (After Publishing)
         if: always()
         run: npx cypress-ms-teams-reporter
         env:
           TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
-
-      - id: publish
-        run: scripts/ci/release.sh
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ steps.publish.outputs.version }}
-          name: Release v${{ steps.publish.outputs.version }}
-          body: ${{ steps.publish.outputs.notes }}
-          draft: false
-          prerelease: false

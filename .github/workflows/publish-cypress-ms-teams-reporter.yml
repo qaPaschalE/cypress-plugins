@@ -1,27 +1,29 @@
-name: publish
+name: Publish and release cypress-ms-teams-reporter
 
 on:
-  workflow_run:
-    workflows: ["build"]
+  repository_dispatch:
     types:
-      - completed
+      - release-triggered
+  workflow_dispatch:
 
 defaults:
   run:
     working-directory: cypress-ms-teams-reporter
 
 jobs:
-  test-and-publish:
+  release:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Use Node.js 18
+      - name: Use Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: 18
-          cache: "npm"
+          node-version: 20
+          registry-url: "https://registry.npmjs.org"
           cache-dependency-path: cypress-ms-teams-reporter/package-lock.json
 
       - name: 📦 Install Dependencies
@@ -44,3 +46,20 @@ jobs:
         run: npx cypress-ms-teams-reporter
         env:
           TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+
+      - id: publish
+        run: scripts/ci/release.sh
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.publish.outputs.version }}
+          name: Release v${{ steps.publish.outputs.version }}
+          body: ${{ steps.publish.outputs.notes }}
+          draft: false
+          prerelease: false

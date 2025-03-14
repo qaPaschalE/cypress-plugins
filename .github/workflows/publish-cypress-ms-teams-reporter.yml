@@ -1,15 +1,13 @@
-name: build
+name: publish
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["build"]
+    types:
+      - completed
 
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
     steps:
       - name: 🚀 Checkout Repository
@@ -19,45 +17,29 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
+          registry-url: https://registry.npmjs.org/
 
-      - name: 📦 Cache Dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            node_modules
-            cypress-plugins/cypress-ms-teams-reporter/node_modules
-          key: npm-${{ runner.os }}-${{ hashFiles('cypress-plugins/cypress-ms-teams-reporter/package-lock.json') }}
-          restore-keys: |
-            npm-${{ runner.os }}-
-
-      - name: 🚀 Checkout Repository (Ensure Depth)
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: 🛠 Debug Workspace
-        run: ls -R
-
-      - name: 🏗 Verify Repository Structure
-        run: ls -l
-
-      - name: 📥 Install Dependencies
+      - name: 📦 Install Dependencies
         working-directory: cypress-ms-teams-reporter
         run: npm install
-        continue-on-error: true
 
       - name: 🛠 Build Package
         working-directory: cypress-ms-teams-reporter
         run: npm run build
 
-      - name: 🛠 cypress tests
+      - name: 🚀 Publish to npm
         working-directory: cypress-ms-teams-reporter
-        run: npx cypress run
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: 📤 Upload Build Artifacts
-        uses: actions/upload-artifact@v4
+      - name: 🏷️ Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: cypress-ms-teams-reporter
-          path: |
-            cypress/reports
-            cypress/screenshots
+          tag_name: v1.3.${{ github.run_number }}
+          name: Release v1.3.${{ github.run_number }}
+          body: "📦 New release of cypress-ms-teams-reporter 🚀"
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

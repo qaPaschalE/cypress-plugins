@@ -1,4 +1,4 @@
-name: Cypress Tests with MS Teams Reporting
+name: build
 
 on:
   push:
@@ -9,9 +9,8 @@ on:
       - main
 
 jobs:
-  cypress-run:
+  build:
     runs-on: ubuntu-latest
-
     steps:
       - name: 🚀 Checkout Repository
         uses: actions/checkout@v4
@@ -21,15 +20,24 @@ jobs:
         with:
           node-version: 18
 
-      - name: 📦 Install Dependencies
+      - name: 📦 Cache Dependencies
+        uses: actions/cache@v3
+        with:
+          path: cypress-plugins/cypress-ms-teams-reporter/node_modules
+          key: npm-${{ runner.os }}-${{ hashFiles('cypress-plugins/cypress-ms-teams-reporter/package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
+
+      - name: 📥 Install Dependencies
         run: |
-          cd cypress-ms-teams-reporter
+          cd cypress-plugins/cypress-ms-teams-reporter
           npm install
 
-      - name: 🏃‍♂️ Run Cypress Tests
+      - name: 🛠 Build Package
         run: |
-          npx cypress run
+          cd cypress-plugins/cypress-ms-teams-reporter
+          npm run build
 
-      - name: 📩 Send Report to Microsoft Teams
+      - name: ✅ Verify Build Output
         run: |
-          npx cypress-ms-teams-reporter github ${{ secrets.TEAMS_WEBHOOK_URL }}
+          ls -la cypress-plugins/cypress-ms-teams-reporter/dist

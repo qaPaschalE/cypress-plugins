@@ -1,11 +1,10 @@
-name: Publish cypress-ms-teams-reporter to NPM
+name: publish
 
 on:
-  push:
-    branches:
-      - main
-  release:
-    types: [created]
+  workflow_run:
+    workflows: ["build"]
+    types:
+      - completed
 
 jobs:
   publish:
@@ -23,32 +22,31 @@ jobs:
       - name: 📦 Cache Dependencies
         uses: actions/cache@v3
         with:
-          path: ~/.npm
-          key: npm-${{ runner.os }}-${{ hashFiles('cypress-ms-teams-reporter/package-lock.json') }}
+          path: cypress-plugins/cypress-ms-teams-reporter/node_modules
+          key: npm-${{ runner.os }}-${{ hashFiles('cypress-plugins/cypress-ms-teams-reporter/package-lock.json') }}
           restore-keys: |
             npm-${{ runner.os }}-
 
-      - name: 🔍 Check Current Directory
-          - cd cypress-ms-teams-reporter
-        run: pwd
-
       - name: 📥 Install Dependencies
         run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
-          fi
+          cd cypress-plugins/cypress-ms-teams-reporter
+          npm install
 
-      - name: 🛠 Build Package
+      - name: 🛠 Build Package (Again for Safety)
         run: |
+          cd cypress-plugins/cypress-ms-teams-reporter
           npm run build
 
       - name: 🚀 Publish Package to NPM
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
+          cd cypress-plugins/cypress-ms-teams-reporter
           npm publish --access public
+
+      - name: 🏷️ Tag Version
+        run: |
+          cd cypress-plugins/cypress-ms-teams-reporter
           VERSION=$(node -p "require('./package.json').version")
           git tag v$VERSION
           git push origin v$VERSION

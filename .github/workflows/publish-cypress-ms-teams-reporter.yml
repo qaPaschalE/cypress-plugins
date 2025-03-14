@@ -1,5 +1,4 @@
 name: publish
-
 on:
   repository_dispatch:
     types:
@@ -13,35 +12,48 @@ defaults:
 jobs:
   release:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+    steps:
+      - name: 🚀 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Ensures full history for tagging
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           registry-url: "https://registry.npmjs.org"
+          cache: "npm"
           cache-dependency-path: cypress-ms-teams-reporter/package-lock.json
-
-      - name: 🔍 Get Current Version
-        id: get_version
-        run: echo "VERSION=$(jq -r .version package.json)" >> $GITHUB_ENV
 
       - name: 🚀 Bump Version (If Needed)
         run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           NEW_VERSION=$(npm version patch -m "🔖 Bump version to %s")
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
-          git push --follow-tags
+          git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/qaPaschalE/cypress-plugins.git --follow-tags
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - id: publish
+      - name: ✅ Run Cypress Tests (But Continue on Failure)
+        run: |
+          npx cypress run || echo "⚠️ Cypress tests failed, but continuing..."
+        continue-on-error: true
+
+      - name: 📤 Report Test Results to Microsoft Teams
+        run: |
+          npx @paschal_cheps/cypress-ms-teams-reporter@latest
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+
+      - name: 📦 Publish to NPM
         run: npm publish --access public
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Create Release
+      - name: 🚀 Create GitHub Release
         id: create_release
         uses: softprops/action-gh-release@v2
         env:
@@ -49,16 +61,6 @@ jobs:
         with:
           tag_name: v${{ env.NEW_VERSION }}
           name: Release v${{ env.NEW_VERSION }}
-          body: "🔖 New release v${{ env.NEW_VERSION }}"
+          body: "🚀 New release v${{ env.NEW_VERSION }} is out! Check the changelog for details."
           draft: false
           prerelease: false
-
-      - name: ✅ Run Cypress Tests
-        run: |
-          npx cypress run || echo "⚠️ Cypress tests failed, but continuing..."
-
-      - name: 📢 Report to Microsoft Teams
-        if: always()
-        run: node scripts/report-to-teams.js
-        env:
-          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}

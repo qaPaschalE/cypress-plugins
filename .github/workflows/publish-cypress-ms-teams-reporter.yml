@@ -1,4 +1,4 @@
-name: Publish and release cypress-ms-teams-reporter
+name: publish
 
 on:
   repository_dispatch:

@@ -24,7 +24,7 @@ jobs:
           node-version: 18
 
       - name: 📦 Cache Dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             node_modules
@@ -47,4 +47,12 @@ jobs:
 
       - name: 📥 Install Dependencies
         working-directory: cypress-plugins/cypress-ms-teams-reporter
-        run: npm install
+        run: |
+          npm install
+          npx cypress run
+
+      - name: 📤 Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-ms-teams-reporter
+          path: cypress/reports

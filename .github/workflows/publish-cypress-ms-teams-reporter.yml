@@ -21,7 +21,7 @@ jobs:
           node-version: 18
 
       - name: 📦 Cache Dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             node_modules
@@ -50,7 +50,7 @@ jobs:
         run: npm run build
 
       - name: 📤 Upload Build Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cypress-ms-teams-reporter
-          path: cypress-ms-teams-reporter/cypress/reports
+          path: cypress-plugins/cypress-ms-teams-reporter

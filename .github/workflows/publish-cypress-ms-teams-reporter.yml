@@ -1,35 +1,33 @@
-name: Publish and Release Cypress MS Teams Reporter
+name: Publish Cypress MS Teams Reporter
 
 on:
   push:
     branches:
-      - main # Auto-triggers when pushing to 'main'
+      - main
 
 defaults:
   run:
     working-directory: cypress-ms-teams-reporter
 
 jobs:
-  release:
+  publish:
     runs-on: ubuntu-latest
 
     steps:
       - name: 🚀 Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # Ensures full commit history for tagging
 
       - name: 🔧 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          registry-url: "https://registry.npmjs.org"
           cache: "npm"
           cache-dependency-path: cypress-ms-teams-reporter/package-lock.json
 
-      - name: 🔍 Get Package Version
-        id: get_version
-        run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
+      - name: 📦 Install Dependencies
+        run: npm install
 
       - name: ✅ Run Cypress Tests (Continue on Failure)
         run: |
@@ -50,16 +48,8 @@ jobs:
         env:
           TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
 
-      - name: 📦 Install Dependencies
-        run: npm install
-
-      - name: 🏗 Build Project
-        run: npm run build
-
-      - name: 📦 Publish to NPM
-        run: npm publish --access public
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: 🔖 Extract Version from package.json
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
 
       - name: 🚀 Create GitHub Release
         id: create_release

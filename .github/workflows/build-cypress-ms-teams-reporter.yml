@@ -19,9 +19,10 @@ jobs:
         node-version: [18.x, 20.x, 22.x]
 
     steps:
-      - uses: actions/checkout@v4
+      - name: 🚀 Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: 🔧 Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
@@ -30,17 +31,8 @@ jobs:
 
       - name: 📦 Install Dependencies
         run: npm install
+        working-directory: cypress-ms-teams-reporter
 
-      - name: 🛠 Build Package
-        run: npm run build
-
-      - name: 🗑 Delete Existing Cypress Artifacts
-        run: gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts | jq -r '.artifacts[] | select(.name=="cypress-artifacts") | .id' | xargs -I {} gh api -X DELETE repos/${{ github.repository }}/actions/artifacts/{}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 📤 Upload-Build-Artifact-${{ github.run_id }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: cypress-ms-teams-reporter-build
-          path: cypress-ms-teams-reporter/dist
+      - name: 🏗️ Build and Run Tests
+        run: ./scripts/ci/build-and-test.sh
+        working-directory: cypress-ms-teams-reporter

@@ -30,8 +30,8 @@ jobs:
 
       - name: 🚀 Bump Version and Push Tags
         run: |
-          git config --global user.name "GitHub Actions Bot"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "qaPaschalE"
+          git config --global user.email "paschal.enyimiri@gmail.com"
 
           # Get the current version in package.json
           CURRENT_VERSION=$(node -p "require('./package.json').version")

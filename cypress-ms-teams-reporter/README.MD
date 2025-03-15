@@ -10,12 +10,9 @@ A Cypress reporter that sends test results to Microsoft Teams.
 </td></tr></table>
 
 [![npm version](https://img.shields.io/npm/v/@paschal_cheps/cypress-ms-teams-reporter)](https://www.npmjs.com/package/@paschal_cheps/cypress-ms-teams-reporter)
-[![npm downloads](https://img.shields.io/npm/dt/@paschal_cheps/cypress-ms-teams-reporter)](https://www.npmjs.com/package/@paschal_cheps/cypress-ms-teams-reporter)
 [![license](https://img.shields.io/npm/l/@paschal_cheps/cypress-ms-teams-reporter)](https://github.com/qaPaschalE/cypress-plugins/@paschal_cheps/cypress-ms-teams-reporter/blob/main/LICENSE)
-![Build Status](https://github.com/cypress-plugins/cypress-ms-teams-reporter/actions/workflows/build-cypress-ms-teams-reporter.yml/badge.svg)
-
-![Repo Views](https://github.com/qaPaschalE/cypress-plugins/blob/main/views-badge.svg)
-
+[![npm downloads](https://img.shields.io/npm/dt/@paschal_cheps/cypress-ms-teams-reporter)](https://www.npmjs.com/package/@paschal_cheps/cypress-ms-teams-reporter)
+[![Build Status](https://github.com/qaPaschalE/cypress-plugins/actions/workflows/build-cypress-ms-teams-reporter.yml/badge.svg)](https://github.com/aPaschalE/cypress-plugins/actions/workflows/build-cypress-ms-teams-reporter.yml)
 [![downloads all time](https://img.shields.io/npm/dt/@paschal_cheps/cypress-ms-teams-reporter.svg?style=flat&color=black&label=lifetime%20downloads)](https://www.npmjs.com/package/@paschal_cheps/cypress-ms-teams-reporter)
 
 ## Overview

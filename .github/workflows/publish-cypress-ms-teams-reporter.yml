@@ -1,10 +1,9 @@
 name: Publish and Release Cypress MS Teams Reporter
 
 on:
-  repository_dispatch:
-    types:
-      - release-triggered
-  workflow_dispatch:
+  push:
+    branches:
+      - master # Automatically triggers on push to master
 
 defaults:
   run:
@@ -28,52 +27,27 @@ jobs:
           cache: "npm"
           cache-dependency-path: cypress-ms-teams-reporter/package-lock.json
 
-      - name: 🚀 Bump Version and Push Tags
+      - name: 🚀 Check and Bump Version
         run: |
-          git config --global user.name "qaPaschalE"
-          git config --global user.email "paschal.enyimiri@gmail.com"
+          git config --global user.name "YourGitHubUsername"
+          git config --global user.email "your-email@example.com"
 
-          # Get the current version in package.json
+          # Get current version
           CURRENT_VERSION=$(node -p "require('./package.json').version")
 
-          # Check if the version already exists on NPM
+          # Check if version exists on NPM
           if npm view @paschal_cheps/cypress-ms-teams-reporter@$CURRENT_VERSION > /dev/null 2>&1; then
-            echo "🚫 Version $CURRENT_VERSION already exists on NPM. Skipping version bump."
+            echo "🚫 Version $CURRENT_VERSION already exists. Skipping version bump."
             exit 0
           fi
 
-          # If the version does not exist, bump it and push the changes
+          # Bump version (patch) and push
           NEW_VERSION=$(npm version patch -m "🔖 Bump version to %s")
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-          # Push the commit and the tag securely
-          git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/qaPaschalE/cypress-plugins.git --follow-tags
-
+          git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/YourGitHubUsername/your-repo.git --follow-tags
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
-
-      - name: 📦 Publish to NPM
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTOMATION_TOKEN }}
-
-  test:
-    runs-on: ubuntu-latest
-    needs: release
-
-    steps:
-      - name: 🚀 Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: 🔧 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          registry-url: "https://registry.npmjs.org"
-          cache: "npm"
-
-      - name: 🆕 Install the Newly Published Version
-        run: npm install @paschal_cheps/cypress-ms-teams-reporter@latest
 
       - name: ✅ Run Cypress Tests (Continue on Failure)
         run: |
@@ -86,11 +60,11 @@ jobs:
         env:
           TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
 
-  release_notes:
-    runs-on: ubuntu-latest
-    needs: test
+      - name: 📦 Publish to NPM
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-    steps:
       - name: 🚀 Create GitHub Release
         id: create_release
         uses: softprops/action-gh-release@v2

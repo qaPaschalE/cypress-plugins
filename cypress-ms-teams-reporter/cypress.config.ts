@@ -11,6 +11,7 @@ async function setupNodeEvents(
 }
 
 export default defineConfig({
+  screenshotsFolder: "cypress/reports",
   reporter: "cypress-mochawesome-reporter",
   reporterOptions: {
     saveJson: true,

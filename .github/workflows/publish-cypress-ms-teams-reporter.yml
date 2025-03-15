@@ -3,7 +3,7 @@ name: Publish and Release Cypress MS Teams Reporter
 on:
   push:
     branches:
-      - main
+      - main # Auto-triggers when pushing to 'main'
 
 defaults:
   run:
@@ -27,32 +27,22 @@ jobs:
           cache: "npm"
           cache-dependency-path: cypress-ms-teams-reporter/package-lock.json
 
-      - name: 🚀 Check and Bump Version
-        run: |
-          git config --global user.name "qaPaschalE"
-          git config --global user.email "paschal.enyimiri@gmail.com"
-
-          # Get current version
-          CURRENT_VERSION=$(node -p "require('./package.json').version")
-
-          # Check if version exists on NPM
-          if npm view @paschal_cheps/cypress-ms-teams-reporter@$CURRENT_VERSION > /dev/null 2>&1; then
-            echo "🚫 Version $CURRENT_VERSION already exists. Skipping version bump."
-            exit 0
-          fi
-
-          # Bump version (patch) and push
-          NEW_VERSION=$(npm version patch -m "🔖 Bump version to %s")
-          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
-
-          git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/qaPaschalE/cypress-plugins.git --follow-tags
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
+      - name: 🔍 Get Package Version
+        id: get_version
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
 
       - name: ✅ Run Cypress Tests (Continue on Failure)
         run: |
           npx cypress run || echo "⚠️ Cypress tests failed, but continuing..."
         continue-on-error: true
+
+      - name: 📤 Upload Cypress Reports
+        if: always() # Always upload even if tests fail
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-reports
+          path: cypress/reports
+          retention-days: 2 # Keep artifacts for 2 days
 
       - name: 📤 Report Test Results to Microsoft Teams
         run: |
@@ -63,7 +53,7 @@ jobs:
       - name: 📦 Publish to NPM
         run: npm publish --access public
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTOMATION_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: 🚀 Create GitHub Release
         id: create_release
@@ -71,8 +61,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ env.NEW_VERSION }}
-          name: Release v${{ env.NEW_VERSION }}
-          body: "🚀 New release v${{ env.NEW_VERSION }} is out! Check the changelog for details."
+          tag_name: v${{ env.VERSION }}
+          name: Release v${{ env.VERSION }}
+          body: "🚀 New release v${{ env.VERSION }} is out! Check the changelog for details."
           draft: false
           prerelease: false

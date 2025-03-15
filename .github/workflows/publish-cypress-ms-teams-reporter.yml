@@ -47,7 +47,8 @@ jobs:
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
           # Push the commit and the tag securely
-          git push --follow-tags
+          git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/qaPaschalE/cypress-plugins.git --follow-tags
+
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
 

@@ -29,8 +29,8 @@ jobs:
 
       - name: 🚀 Check and Bump Version
         run: |
-          git config --global user.name "YourGitHubUsername"
-          git config --global user.email "your-email@example.com"
+          git config --global user.name "qaPaschalE"
+          git config --global user.email "paschal.enyimiri@gmail.com"
 
           # Get current version
           CURRENT_VERSION=$(node -p "require('./package.json').version")
@@ -45,7 +45,7 @@ jobs:
           NEW_VERSION=$(npm version patch -m "🔖 Bump version to %s")
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-          git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/YourGitHubUsername/your-repo.git --follow-tags
+          git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/qaPaschalE/cypress-plugins.git --follow-tags
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
 
@@ -63,7 +63,7 @@ jobs:
       - name: 📦 Publish to NPM
         run: npm publish --access public
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTOMATION_TOKEN }}
 
       - name: 🚀 Create GitHub Release
         id: create_release

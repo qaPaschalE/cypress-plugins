@@ -1,4 +1,5 @@
-name: publish
+name: Publish and Release Cypress MS Teams Reporter
+
 on:
   repository_dispatch:
     types:
@@ -17,7 +18,7 @@ jobs:
       - name: 🚀 Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Ensures full history for tagging
+          fetch-depth: 0
 
       - name: 🔧 Setup Node.js
         uses: actions/setup-node@v4
@@ -27,17 +28,40 @@ jobs:
           cache: "npm"
           cache-dependency-path: cypress-ms-teams-reporter/package-lock.json
 
-      - name: 🚀 Bump Version (If Needed)
+      - name: 🚀 Bump Version and Push Tags
         run: |
-          git config --global user.name "github-actions[bot]"
+          git config --global user.name "GitHub Actions Bot"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           NEW_VERSION=$(npm version patch -m "🔖 Bump version to %s")
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
           git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/qaPaschalE/cypress-plugins.git --follow-tags
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_PAT: ${{ secrets.GH_PAT }}
 
-      - name: ✅ Run Cypress Tests (But Continue on Failure)
+      - name: 📦 Publish to NPM
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTOMATION_TOKEN }}
+
+  test:
+    runs-on: ubuntu-latest
+    needs: release
+
+    steps:
+      - name: 🚀 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org"
+          cache: "npm"
+
+      - name: 🆕 Install the Newly Published Version
+        run: npm install @paschal_cheps/cypress-ms-teams-reporter@latest
+
+      - name: ✅ Run Cypress Tests (Continue on Failure)
         run: |
           npx cypress run || echo "⚠️ Cypress tests failed, but continuing..."
         continue-on-error: true
@@ -48,11 +72,11 @@ jobs:
         env:
           TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
 
-      - name: 📦 Publish to NPM
-        run: npm publish --access public
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+  release_notes:
+    runs-on: ubuntu-latest
+    needs: test
 
+    steps:
       - name: 🚀 Create GitHub Release
         id: create_release
         uses: softprops/action-gh-release@v2

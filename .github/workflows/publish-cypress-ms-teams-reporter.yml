@@ -50,6 +50,12 @@ jobs:
         env:
           TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
 
+      - name: 📦 Install Dependencies
+        run: npm install
+
+      - name: 🏗 Build Project
+        run: npm run build
+
       - name: 📦 Publish to NPM
         run: npm publish --access public
         env:

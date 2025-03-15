@@ -32,9 +32,22 @@ jobs:
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Get the current version in package.json
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+
+          # Check if the version already exists on NPM
+          if npm view @paschal_cheps/cypress-ms-teams-reporter@$CURRENT_VERSION > /dev/null 2>&1; then
+            echo "🚫 Version $CURRENT_VERSION already exists on NPM. Skipping version bump."
+            exit 0
+          fi
+
+          # If the version does not exist, bump it and push the changes
           NEW_VERSION=$(npm version patch -m "🔖 Bump version to %s")
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
-          git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/qaPaschalE/cypress-plugins.git --follow-tags
+
+          # Push the commit and the tag securely
+          git push --follow-tags
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
 

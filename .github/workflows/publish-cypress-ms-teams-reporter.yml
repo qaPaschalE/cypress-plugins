@@ -3,7 +3,7 @@ name: Publish and Release Cypress MS Teams Reporter
 on:
   push:
     branches:
-      - master # Automatically triggers on push to master
+      - main
 
 defaults:
   run:

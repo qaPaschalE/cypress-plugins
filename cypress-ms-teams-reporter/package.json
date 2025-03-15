@@ -24,10 +24,6 @@
     "cypress-mochawesome-reporter"
   ],
   "type": "module",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/qaPaschalE/cypress-plugins.git"
-  },
   "author": "Chetachi Paschal Enyimiri",
   "license": "MIT",
   "dependencies": {

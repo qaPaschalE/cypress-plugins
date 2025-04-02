@@ -17,6 +17,7 @@ export class GitHubProvider implements CIProvider {
     }
 
     try {
+      // Fetch artifacts for the current workflow run
       const response = await axios.get(
         `https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts`,
         {
@@ -27,12 +28,20 @@ export class GitHubProvider implements CIProvider {
         }
       );
 
+      // Check if any artifacts exist
       if (!response.data.artifacts || response.data.artifacts.length === 0) {
         console.error(chalk.yellow("⚠️ No artifacts found for this run."));
         return null;
       }
 
-      return response.data.artifacts[0].archive_download_url;
+      // Extract the first artifact's ID
+      const artifactId = response.data.artifacts[0].id;
+
+      // Construct the artifact URL in the desired format
+      const artifactUrl = `https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts/${artifactId}`;
+
+      console.log(chalk.green(`✅ Artifact URL: ${artifactUrl}`));
+      return artifactUrl;
     } catch (error) {
       console.error(
         chalk.red("❌ Failed to fetch GitHub artifact URL:", error)

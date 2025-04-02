@@ -1,7 +1,8 @@
 # **@paschal_cheps/cypress-ms-teams-reporter** 🏆🚀
 
-<table align="center" style="margin-bottom:30px;"><tr><td align="center" width="9999" heigth="9999 " >
- <img src="assets/paschal logo (2).png" alt="paschal Logo" style="margin-top:25px;" align="center"/>
+<table align="center"><tr><td align="center">
+<img src="https://github.com/qaPaschalE/cypress-plugins/blob/main/assets/paschal%20logo%20(2).png?raw=true" alt="paschal Logo" style="max-width:120px;  margin-top:15px;"/>
+</td></tr></table>
 
 #
 
@@ -19,8 +20,15 @@ A Cypress reporter that sends test results to Microsoft Teams.
 
 A **Microsoft Teams** reporter for **Cypress test automation** that integrates test reports from **Mochawesome** and sends them as notifications to Teams channels. Supports multiple **CI/CD providers** like GitHub, Bitbucket, CircleCI, and Jenkins.
 
-![Failed Tests](assets/Failed_screenshot.jpeg)
-![Passed Tests](assets/Passed_screenshot.jpeg)
+## **📝 Example Teams Reports**
+
+### **📌 Failed Report**
+
+<img src="https://github.com/qaPaschalE/cypress-plugins/blob/main/assets/Failed_screenshot.jpeg?raw=true" alt="teams report with fail test screenshot" width="50%" />
+
+### **📌 Passed Report**
+
+<img src="https://github.com/qaPaschalE/cypress-plugins/blob/main/assets/Passed_screenshot.jpeg?raw=true" alt="teams report with pass test screenshot" width="50%" />
 
 ---
 

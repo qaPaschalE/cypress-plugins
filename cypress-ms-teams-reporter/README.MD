@@ -123,58 +123,25 @@ npx cypress-ms-teams-reporter --custom-url="[https://example.com/report.html](ht
 npx cypress-ms-teams-reporter --only-failed
 ```
 
-### Programmatic Usage
+### reportConfig.js Usage
 
 ```js
-const { sendTeamsReport } = require("cypress-ms-teams-reporter");
+// teamsReport.config.js
+import "dotenv/config";
 
-sendTeamsReport({
-  ciProvider: "github",
-  teamsWebhookUrl: "[https://teams.webhook.url](https://teams.webhook.url)",
-  reportDir: "cypress/reports",
-  verbose: true,
-});
-```
+export default {
+  teamsWebhookUrl: process.env.TEAMS_WEBHOOK_URL, // Replace with your actual webhook URL
+  reportDir: "cypress/reports", // Customize the report directory if needed
+  reportFilename: "index.json", // Customize the report filename if needed
+  reportTitle: "Cypress E2E Tests", // Customize the title of the report in Teams
+  ciProvider: "local", // Specify your CI provider (github, bitbucket, circleci, jenkins, local, none)
+  customFacts: [
+    { name: "Environment", value: "Staging" },
+    { name: "Release", value: "v1.2.3" },
+  ],
 
-## Cypress Integration
-
-### Using `task` in `cypress.config.ts`
-
-```ts
-import { defineConfig } from "cypress";
-import { sendTeamsReport } from "cypress-ms-teams-reporter";
-
-export default defineConfig({
-  e2e: {
-    setupNodeEvents(on, config) {
-      on("task", {
-        sendTeamsReport(options) {
-          return sendTeamsReport(options);
-        },
-      });
-    },
-  },
-});
-```
-
-### Using `on` events in `cypress.config.js`
-
-```js
-const { sendTeamsReport } = require("cypress-ms-teams-reporter");
-
-module.exports = {
-  e2e: {
-    setupNodeEvents(on, config) {
-      on("after:run", async (results) => {
-        await sendTeamsReport({
-          ciProvider: "github",
-          teamsWebhookUrl: process.env.TEAMS_WEBHOOK_URL,
-          reportDir: "mochareports",
-          testResults: results,
-        });
-      });
-    },
-  },
+  reportUrl: process.env.REPORT_URL, // Add your report URL here
+  customUrl: process.env.REPORT_URL,
 };
 ```
 

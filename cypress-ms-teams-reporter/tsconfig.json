@@ -1,13 +1,21 @@
 {
   "compilerOptions": {
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "target": "ESNext",
-    "outDir": "dist",
-    "strict": true,
+    "lib": ["es5", "dom"],
+    "types": ["cypress"],
+    "allowJs": false,
+    "skipLibCheck": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
+    "moduleResolution": "node",
     "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true
+    "isolatedModules": true,
+    "noEmit": true,
+    "target": "ES2018",
+    "jsx": "react-jsx"
   },
-  "include": ["src"]
+  "include": ["**/*.ts", "**/*.js"],
+  "exclude": ["node_modules"]
 }

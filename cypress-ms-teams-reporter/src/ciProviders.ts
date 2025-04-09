@@ -1,3 +1,4 @@
+// ciProviders.ts
 import axios from "axios";
 import chalk from "chalk";
 
@@ -46,42 +47,119 @@ export class GitHubProvider implements CIProvider {
       console.error(
         chalk.red("❌ Failed to fetch GitHub artifact URL:", error)
       );
-      return null;
+      return process.env.REPORT_URL || null;
     }
   }
 }
 
 export class BitbucketProvider implements CIProvider {
   async getArtifactUrl(): Promise<string | null> {
-    console.log(
-      chalk.yellow("⚠️ Bitbucket artifact retrieval not yet implemented.")
-    );
-    return null;
+    const { BITBUCKET_WORKSPACE, BITBUCKET_REPO_SLUG, BITBUCKET_BUILD_NUMBER } =
+      process.env;
+
+    if (
+      !BITBUCKET_WORKSPACE ||
+      !BITBUCKET_REPO_SLUG ||
+      !BITBUCKET_BUILD_NUMBER
+    ) {
+      console.error(
+        chalk.red(
+          "❌ Missing Bitbucket credentials. Skipping artifact retrieval."
+        )
+      );
+      return null;
+    }
+
+    try {
+      const artifactUrl = `https://bitbucket.org/${BITBUCKET_WORKSPACE}/${BITBUCKET_REPO_SLUG}/pipelines/results/${BITBUCKET_BUILD_NUMBER}`;
+      console.log(
+        chalk.green(`✅ Bitbucket Pipeline Results URL: ${artifactUrl}`)
+      );
+      return artifactUrl;
+    } catch (error) {
+      console.error(
+        chalk.red(
+          "❌ Failed to construct Bitbucket Pipeline Results URL:",
+          error
+        )
+      );
+      return process.env.REPORT_URL || null;
+    }
   }
 }
 
 export class CircleCIProvider implements CIProvider {
   async getArtifactUrl(): Promise<string | null> {
-    console.log(
-      chalk.yellow("⚠️ CircleCI artifact retrieval not yet implemented.")
-    );
-    return null;
+    const {
+      CIRCLE_PROJECT_USERNAME,
+      CIRCLE_PROJECT_REPONAME,
+      CIRCLE_BUILD_NUM,
+      CIRCLE_WORKFLOW_ID,
+      CIRCLE_PROJECT_ID,
+    } = process.env;
+
+    if (
+      !CIRCLE_PROJECT_USERNAME ||
+      !CIRCLE_PROJECT_REPONAME ||
+      !CIRCLE_BUILD_NUM ||
+      !CIRCLE_WORKFLOW_ID ||
+      !CIRCLE_PROJECT_ID
+    ) {
+      console.error(
+        chalk.red(
+          "❌ Missing CircleCI credentials. Skipping artifact retrieval."
+        )
+      );
+      return null;
+    }
+
+    try {
+      const artifactUrl = `https://app.circleci.com/pipelines/github/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/${CIRCLE_PROJECT_ID}/workflows/${CIRCLE_WORKFLOW_ID}/jobs/${CIRCLE_BUILD_NUM}/artifacts`;
+      console.log(chalk.green(`✅ CircleCI Artifacts URL: ${artifactUrl}`));
+      return artifactUrl;
+    } catch (error) {
+      console.error(
+        chalk.red("❌ Failed to construct CircleCI Artifacts URL:", error)
+      );
+      return process.env.REPORT_URL || null;
+    }
   }
 }
 
 export class JenkinsProvider implements CIProvider {
   async getArtifactUrl(): Promise<string | null> {
-    console.log(
-      chalk.yellow("⚠️ Jenkins artifact retrieval not yet implemented.")
-    );
-    return null;
+    const { JENKINS_URL, JOB_NAME, BUILD_URL } = process.env;
+
+    if (!JENKINS_URL || !JOB_NAME || !BUILD_URL) {
+      console.error(
+        chalk.red(
+          "❌ Missing Jenkins credentials (JENKINS_URL, JOB_NAME, BUILD_URL). Skipping artifact retrieval."
+        )
+      );
+      return null;
+    }
+
+    try {
+      const artifactUrl = BUILD_URL;
+      console.log(
+        chalk.green(`✅ Jenkins Pipeline Results URL: ${artifactUrl}`)
+      );
+      return artifactUrl;
+    } catch (error) {
+      console.error(
+        chalk.red("❌ Failed to construct Jenkins Pipeline Results URL:", error)
+      );
+      return process.env.REPORT_URL || null;
+    }
   }
 }
 
 export class LocalProvider implements CIProvider {
   async getArtifactUrl(): Promise<string | null> {
-    console.log(chalk.blue("📄 Running locally, no artifact URL available."));
-    return null;
+    console.log(
+      chalk.blue("📄 Running locally, using REPORT_URL from environment.")
+    );
+    return process.env.REPORT_URL || null;
   }
 }
 

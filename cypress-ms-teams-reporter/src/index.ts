@@ -1,10 +1,32 @@
 #!/usr/bin/env node
 import "dotenv/config";
 import fs from "fs/promises";
-import axios from "axios";
 import chalk from "chalk";
 import { Command } from "commander";
 import { getCIProvider } from "./ciProviders.js";
+import { IncomingWebhook } from "ms-teams-webhook"; // Import IncomingWebhook
+import path from "path"; // Import path for config file
+import { pathExists } from "fs-extra"; // Import pathExists from fs-extra
+
+// Define interfaces
+// Define interfaces
+interface Fact {
+  name: string;
+  value: string;
+}
+
+interface ReportConfig {
+  teamsWebhookUrl?: string;
+  reportDir?: string;
+  reportFilename?: string;
+  reportTitle?: string;
+  ciProvider?: string;
+  customFacts?: Fact[];
+  projectRoot?: string;
+  verbose?: boolean; // Added verbose option
+  reportUrl?: string; // Add reportUrl here
+  customUrl?: string; // Add customUrl here
+}
 
 // Load package.json version dynamically
 const packageJson = JSON.parse(
@@ -49,18 +71,97 @@ program
     "Team name receiving the test report",
     process.env.TEAM_NAME || ""
   )
+  .option(
+    "--config-file <path>",
+    "Path to the configuration file for the Teams reporter",
+    "teamsReport.config.js" // Default config file name changed here
+  )
   .parse(process.argv);
 
 const options = program.opts();
-const REPORT_PATH = `${options.reportDir}/html/index.json`;
+const REPORT_PATH = `${options.reportDir}/html/index.json`; // Adjust this path based on your Mochawesome JSON output
 const TEAMS_WEBHOOK_URL = process.env.TEAMS_WEBHOOK_URL;
 
+const DEFAULT_CONFIG: ReportConfig = {
+  reportDir: "cypress/reports",
+  reportFilename: "index.json",
+  reportTitle: "Cypress E2E Tests",
+  ciProvider: "github",
+  customFacts: [],
+  projectRoot: process.cwd(),
+  verbose: false, // Default verbose to false
+};
+
+async function loadConfig(
+  projectRoot: string = process.cwd()
+): Promise<ReportConfig> {
+  const configFileName = options.configFile;
+  const configPath = path.resolve(projectRoot, configFileName);
+  let finalConfig: ReportConfig = {
+    ...DEFAULT_CONFIG,
+    projectRoot,
+    verbose: options.verbose,
+  };
+
+  if (options.ciProvider && options.ciProvider !== "github") {
+    // Only override if a value other than default is provided
+    finalConfig.ciProvider = options.ciProvider;
+  }
+
+  if (options.verbose) {
+    console.log(
+      chalk.blue("Command-line CI Provider Option:"),
+      options.ciProvider
+    );
+  }
+  try {
+    if (await pathExists(configPath)) {
+      const importedConfig = await import(configPath);
+      const loadedConfig = importedConfig.default as ReportConfig; // Access the default export
+      if (options.verbose) {
+        console.log(chalk.yellow(`⚙️ Loaded config from: ${configPath}`));
+      }
+      finalConfig = { ...finalConfig, ...loadedConfig }; // Merge loaded config into the base config
+    } else {
+      if (options.verbose) {
+        console.log(
+          chalk.yellow(
+            `⚠️ No config file found at: ${configPath}. Using default settings.`
+          )
+        );
+      }
+    }
+  } catch (error) {
+    console.error(
+      chalk.red(`❌ Error loading config file from ${configPath}:`),
+      error
+    );
+  }
+  return finalConfig;
+}
+const config = await loadConfig(process.cwd());
+
 // Fetch artifact URL based on CI Provider
-const ciProvider = getCIProvider(options.ciProvider);
-const REPORT_URL =
-  options.customUrl ||
-  (await ciProvider.getArtifactUrl()) ||
-  "No report URL available";
+const ciProvider = getCIProvider(config.ciProvider);
+const artifactUrlFromProvider = await ciProvider.getArtifactUrl();
+
+let REPORT_URL = options.customUrl;
+
+if (!REPORT_URL && config.ciProvider === "local") {
+  REPORT_URL = config.customUrl || config.reportUrl;
+}
+
+if (!REPORT_URL) {
+  REPORT_URL = artifactUrlFromProvider || "No report URL available";
+}
+
+if (options.verbose) {
+  console.log(chalk.blue("Configured CI Provider:"), config.ciProvider);
+  console.log(
+    chalk.blue("Artifact URL from Provider:"),
+    artifactUrlFromProvider
+  );
+}
 
 console.log(chalk.blueBright(`🚀 Running version: ${packageJson.version}`));
 console.log(chalk.cyan(`📢 Report URL: ${REPORT_URL}`));
@@ -132,14 +233,18 @@ async function displayTestResults(report: any) {
 }
 
 // Send results to Microsoft Teams
-async function sendTeamsReport() {
+async function sendTeamsReport(options: any) {
   try {
-    if (!TEAMS_WEBHOOK_URL) {
+    const teamsWebhookUrl = process.env.TEAMS_WEBHOOK_URL; // Get the webhook URL directly from environment variables
+
+    if (!teamsWebhookUrl) {
       console.error(
         chalk.red("❌ Missing TEAMS_WEBHOOK_URL environment variable")
       );
       return;
     }
+
+    const webhook = new IncomingWebhook(teamsWebhookUrl); // Instantiate IncomingWebhook
 
     const reportData = await fs.readFile(REPORT_PATH, "utf-8");
     const report = JSON.parse(reportData);
@@ -184,7 +289,7 @@ async function sendTeamsReport() {
         },
         {
           title: "Test Status Distribution",
-          text: `📊 **Pie Chart**: ${pieChart}\n\n✅ Passed: ${passPercentage}% 🟢\n❌ Failed: ${failPercentage}% 🔴\n⚠️ Pending: ${pendingPercentage}% ⚠️\n`,
+          text: `📊 **Pie Chart**: ${pieChart}\n\n✅ Passed: ${passPercentage}% 🟢\n❌ Failed: ${passPercentage}% 🔴\n⚠️ Pending: ${pendingPercentage}% ⚠️\n`,
           markdown: true,
         },
         {
@@ -211,7 +316,7 @@ async function sendTeamsReport() {
       ],
     };
 
-    await axios.post(TEAMS_WEBHOOK_URL, message);
+    await webhook.send(message); // Use the send method of IncomingWebhook
     console.log(chalk.green("✅ Teams notification sent successfully!"));
   } catch (error: any) {
     console.error(
@@ -220,4 +325,4 @@ async function sendTeamsReport() {
   }
 }
 
-sendTeamsReport();
+export { sendTeamsReport };

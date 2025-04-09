@@ -24,28 +24,6 @@ jobs:
           cache: "npm"
           cache-dependency-path: cypress-ms-teams-reporter/package-lock.json
 
-      - name: 📦 Install Dependencies
-        run: npm install
-
-      - name: ✅ Run Cypress Tests (Continue on Failure)
-        run: |
-          npx cypress run
-        continue-on-error: true
-
-      - name: 📤 Upload Cypress Reports
-        if: always() # Always upload even if tests fail
-        uses: actions/upload-artifact@v4
-        with:
-          name: cypress-reports
-          path: cypress/reports
-          retention-days: 2 # Keep artifacts for 2 days
-
-      - name: 📤 Report Test Results to Microsoft Teams
-        run: |
-          npx @paschal_cheps/cypress-ms-teams-reporter@latest
-        env:
-          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
-
       - name: 🔖 Extract Version from package.json
         run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
 

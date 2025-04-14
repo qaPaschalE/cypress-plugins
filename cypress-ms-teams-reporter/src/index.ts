@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import "dotenv/config";
+import "dotenv/config"; // Load environment variables from .env
 import fs from "fs/promises";
 import chalk from "chalk";
 import { Command } from "commander";
@@ -8,13 +8,28 @@ import { IncomingWebhook } from "ms-teams-webhook"; // Import IncomingWebhook
 import path from "path"; // Import path for config file
 import { pathExists } from "fs-extra"; // Import pathExists from fs-extra
 
-// Define interfaces
+// Validate required environment variables
+if (!process.env.TEAMS_WEBHOOK_URL) {
+  console.error(
+    chalk.red("❌ TEAMS_WEBHOOK_URL is not defined in the environment.")
+  );
+  process.exit(1); // Exit the script with an error code
+}
+
+if (!process.env.REPORT_DIR || !process.env.REPORT_FILENAME) {
+  console.error(
+    chalk.red(
+      "❌ REPORT_DIR or REPORT_FILENAME is not defined in the environment."
+    )
+  );
+  process.exit(1); // Exit the script with an error code
+}
+
 // Define interfaces
 interface Fact {
   name: string;
   value: string;
 }
-
 interface ReportConfig {
   teamsWebhookUrl?: string;
   reportDir?: string;
@@ -79,6 +94,7 @@ program
   .parse(process.argv);
 
 const options = program.opts();
+
 const REPORT_PATH = `${options.reportDir}/html/index.json`; // Adjust this path based on your Mochawesome JSON output
 const TEAMS_WEBHOOK_URL = process.env.TEAMS_WEBHOOK_URL;
 
@@ -102,12 +118,10 @@ async function loadConfig(
     projectRoot,
     verbose: options.verbose,
   };
-
   if (options.ciProvider && options.ciProvider !== "github") {
     // Only override if a value other than default is provided
     finalConfig.ciProvider = options.ciProvider;
   }
-
   if (options.verbose) {
     console.log(
       chalk.blue("Command-line CI Provider Option:"),
@@ -139,6 +153,7 @@ async function loadConfig(
   }
   return finalConfig;
 }
+
 const config = await loadConfig(process.cwd());
 
 // Fetch artifact URL based on CI Provider
@@ -146,11 +161,9 @@ const ciProvider = getCIProvider(config.ciProvider);
 const artifactUrlFromProvider = await ciProvider.getArtifactUrl();
 
 let REPORT_URL = options.customUrl;
-
 if (!REPORT_URL && config.ciProvider === "local") {
   REPORT_URL = config.customUrl || config.reportUrl;
 }
-
 if (!REPORT_URL) {
   REPORT_URL = artifactUrlFromProvider || "No report URL available";
 }
@@ -235,8 +248,7 @@ async function displayTestResults(report: any) {
 // Send results to Microsoft Teams
 async function sendTeamsReport(options: any) {
   try {
-    const teamsWebhookUrl = process.env.TEAMS_WEBHOOK_URL; // Get the webhook URL directly from environment variables
-
+    const teamsWebhookUrl = process.env.TEAMS_WEBHOOK_URL;
     if (!teamsWebhookUrl) {
       console.error(
         chalk.red("❌ Missing TEAMS_WEBHOOK_URL environment variable")
@@ -244,10 +256,20 @@ async function sendTeamsReport(options: any) {
       return;
     }
 
-    const webhook = new IncomingWebhook(teamsWebhookUrl); // Instantiate IncomingWebhook
+    const webhook = new IncomingWebhook(teamsWebhookUrl);
 
+    // Check if the report file exists
+    const reportExists = await pathExists(REPORT_PATH);
+    if (!reportExists) {
+      console.error(chalk.red(`❌ Report file not found at: ${REPORT_PATH}`));
+      return;
+    }
+
+    // Read and parse the report
     const reportData = await fs.readFile(REPORT_PATH, "utf-8");
     const report = JSON.parse(reportData);
+
+    // Process test results
     const {
       total,
       passed,
@@ -289,7 +311,7 @@ async function sendTeamsReport(options: any) {
         },
         {
           title: "Test Status Distribution",
-          text: `📊 **Pie Chart**: ${pieChart}\n\n✅ Passed: ${passPercentage}% 🟢\n❌ Failed: ${passPercentage}% 🔴\n⚠️ Pending: ${pendingPercentage}% ⚠️\n`,
+          text: `📊 **Pie Chart**: ${pieChart}\n✅ Passed: ${passPercentage}% 🟢\n❌ Failed: ${failPercentage}% 🔴\n⚠️ Pending: ${pendingPercentage}% ⚠️`,
           markdown: true,
         },
         {
@@ -301,9 +323,9 @@ async function sendTeamsReport(options: any) {
                   (t) =>
                     `❌ **${t.title}**\nError:\n\`${t.error}\`\nVideo: ${
                       t.context ? t.context : "N/A"
-                    }\n`
+                    }`
                 )
-                .join("\n\n"),
+                .join("\n"),
           markdown: true,
         },
       ],
@@ -316,12 +338,15 @@ async function sendTeamsReport(options: any) {
       ],
     };
 
-    await webhook.send(message); // Use the send method of IncomingWebhook
+    // Send the message to Teams
+    await webhook.send(message);
     console.log(chalk.green("✅ Teams notification sent successfully!"));
   } catch (error: any) {
     console.error(
-      chalk.red("❌ Failed to send Teams notification:", error.message)
+      chalk.red("❌ Failed to send Teams notification:"),
+      error.message
     );
+    console.error(chalk.red("Stack Trace:"), error.stack); // Log stack trace for debugging
   }
 }
 

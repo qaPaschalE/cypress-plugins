@@ -127,21 +127,52 @@ npx cypress-ms-teams-reporter --only-failed
 
 ```js
 // teamsReport.config.js
-import "dotenv/config";
+const dotenv = require("dotenv");
+dotenv.config();
 
-export default {
-  teamsWebhookUrl: process.env.TEAMS_WEBHOOK_URL, // Replace with your actual webhook URL
-  reportDir: "cypress/reports", // Customize the report directory if needed
-  reportFilename: "index.json", // Customize the report filename if needed
-  reportTitle: "Cypress E2E Tests", // Customize the title of the report in Teams
-  ciProvider: "local", // Specify your CI provider (github, bitbucket, circleci, jenkins, local, none)
-  customFacts: [
-    { name: "Environment", value: "Staging" },
-    { name: "Release", value: "v1.2.3" },
-  ],
+// Validate required environment variables
+if (!process.env.TEAMS_WEBHOOK_URL) {
+  throw new Error("TEAMS_WEBHOOK_URL is not defined in the .env file.");
+}
 
-  reportUrl: process.env.REPORT_URL, // Add your report URL here
-  customUrl: process.env.REPORT_URL,
+// List of allowed CI providers
+const allowedCiProviders = [
+  "github",
+  "bitbucket",
+  "circleci",
+  "jenkins",
+  "local",
+  "none",
+];
+
+module.exports = {
+  // Teams Webhook URL for sending test reports
+  teamsWebhookUrl:
+    process.env.TEAMS_WEBHOOK_URL || "https://default-webhook-url",
+
+  // Directory and filename for the test report
+  reportPath: `${process.env.REPORT_DIR || "cypress/reports"}/${
+    process.env.REPORT_FILENAME || "index.json"
+  }`,
+
+  // Title of the report in Microsoft Teams
+  reportTitle: "Cypress E2E Tests",
+
+  // CI provider (e.g., github, bitbucket, local)
+  ciProvider: (() => {
+    const provider = process.env.CI_PROVIDER || "local";
+    if (!allowedCiProviders.includes(provider)) {
+      throw new Error(
+        `Invalid CI provider: ${provider}. Allowed values: ${allowedCiProviders.join(
+          ", "
+        )}`
+      );
+    }
+    return provider;
+  })(),
+
+  // URL to access the test report
+  reportUrl: process.env.REPORT_URL || "https://default-report-url",
 };
 ```
 
